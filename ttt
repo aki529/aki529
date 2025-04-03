@@ -1,1 +1,173 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('https://static.wikitide.net/projectsekaiwiki/2/2f/Bg_area_21.png'); /* Background */
+            background-size: cover;
+            background-position: center;
+        }
 
+        #character {
+            position: absolute;
+            width: 100px; /* Character size */
+            height: 100px; /* Character size */
+            background-image: url('https://media.tenor.com/1h071JUcgGsAAAAj/running-mizuki.gif'); /* Character GIF */
+            background-size: cover;
+            bottom: 10px;
+            transition: bottom 0.2s;
+        }
+
+        #dropItem {
+            position: absolute;
+            width: 50px; /* Item size */
+            height: 50px; /* Item size */
+            background-image: url('https://static.wikia.nocookie.net/projectsekai/images/8/89/Kaito_25_%28icon%29.png'); /* Dropping item */
+            background-size: cover;
+            top: 0; /* Start from the top */
+        }
+
+        #reactionImage {
+            position: absolute;
+            width: 150px; /* Reaction image size */
+            height: auto;
+            bottom: 120px; /* Position above the character */
+            left: 50%; /* Center horizontally */
+            transform: translateX(-50%); /* Center adjustment */
+            display: none; /* Initially hidden */
+        }
+
+        #playAgainButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none; /* Initially hidden */
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="character"></div>
+        <div id="dropItem"></div>
+        <img id="reactionImage" src="https://static.wikia.nocookie.net/projectsekai/images/c/cb/Stamp0089.png/revision/latest?cb=20220223072423" alt="Reaction">
+        <button id="playAgainButton">Play Again</button>
+    </div>
+    <script>
+        const character = document.getElementById('character');
+        const dropItem = document.getElementById('dropItem');
+        const reactionImage = document.getElementById('reactionImage');
+        const playAgainButton = document.getElementById('playAgainButton');
+        let xPosition = 50; // Character position
+        const moveSpeed = 10; // Character speed
+        let isJumping = false; // Jumping state
+        let jumpHeight = 100; // Jump height
+        const fallSpeed = 10; // Item fall speed
+        let gameActive = true; // Track game state
+
+        // Start dropping the item
+        function dropNewItem() {
+            if (!gameActive) return; // Stop if game is not active
+            resetItemPosition(); // Reset position and make the item fall
+
+            let itemPosition = 0; // Reset falling position
+            let fallInterval = setInterval(() => {
+                itemPosition += fallSpeed; // Fall speed
+                dropItem.style.top = itemPosition + 'px';
+
+                // Check if it reaches the bottom
+                if (itemPosition > window.innerHeight - 50) { // If it reaches the lowest part
+                    clearInterval(fallInterval);
+                    dropNewItem(); // Respawn the item at the top
+                } else if (checkCollision()) {
+                    clearInterval(fallInterval);
+                    showReaction(); // Show reaction image
+                }
+            }, 100);
+        }
+
+        function resetItemPosition() {
+            dropItem.style.top = '0px'; // Reset to the top
+            dropItem.style.left = Math.random() * (window.innerWidth - 50) + 'px'; // Random horizontal position
+            dropItem.style.display = 'block'; // Make sure it's visible
+        }
+
+        function checkCollision() {
+            const characterRect = character.getBoundingClientRect();
+            const itemRect = dropItem.getBoundingClientRect();
+            return (
+                characterRect.x < itemRect.x + itemRect.width &&
+                characterRect.x + characterRect.width > itemRect.x &&
+                characterRect.y < itemRect.y + itemRect.height &&
+                characterRect.y + characterRect.height > itemRect.y
+            );
+        }
+
+        function showReaction() {
+            reactionImage.style.display = 'block'; // Show reaction
+            setTimeout(() => {
+                reactionImage.style.display = 'none'; // Hide after 2 seconds
+            }, 2000);
+        }
+
+        window.addEventListener('keydown', (event) => {
+            if (!gameActive) return; // Stop movement if game is not active
+            if (event.key === 'ArrowRight') {
+                xPosition += moveSpeed;
+                character.style.left = xPosition + 'px';
+            }
+            if (event.key === 'ArrowLeft') {
+                xPosition -= moveSpeed;
+                character.style.left = xPosition + 'px';
+            }
+            if (event.key === 'ArrowUp' && !isJumping) {
+                isJumping = true;
+                jump();
+            }
+        });
+
+        function jump() {
+            let originalPosition = parseInt(window.getComputedStyle(character).bottom);
+            let jumpUp = setInterval(() => {
+                if (originalPosition < jumpHeight) {
+                    originalPosition += 5;
+                    character.style.bottom = originalPosition + 'px';
+                } else {
+                    clearInterval(jumpUp);
+                    fall(originalPosition);
+                }
+            }, 20);
+        }
+
+        function fall(originalPosition) {
+            let fallDown = setInterval(() => {
+                if (originalPosition > 10) {
+                    originalPosition -= 5;
+                    character.style.bottom = originalPosition + 'px';
+                } else {
+                    clearInterval(fallDown);
+                    isJumping = false; // Reset jumping state
+                }
+            }, 20);
+        }
+
+        dropNewItem(); // Start dropping the first item
+    </script>
+</body>
+</html>
